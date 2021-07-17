@@ -2,46 +2,39 @@ package twilio
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"strconv"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	tw "github.com/twilio/twilio-go"
+	openapi "github.com/twilio/twilio-go/rest/chat/v2"
 )
 
 func dataSourceChatServicesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := m.(*tw.RestClient)
 
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	// FIXME: use twilio sdk?
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/chat_services.json", "http://localhost:19090"), nil)
-	if err != nil {
-		return diag.FromErr(err)
-	}
+	res, err := client.ChatV2.ListService(&openapi.ListServiceParams{})
 
-	r, err := client.Do(req)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	defer r.Body.Close()
 
 	chatServices := make([]map[string]interface{}, 0)
-	err = json.NewDecoder(r.Body).Decode(&chatServices)
-	if err != nil {
-		return diag.FromErr(err)
+
+	for _, s := range res.Services {
+		chatServices = append(chatServices, map[string]interface{}{
+			"sid":          s.Sid,
+			"friendlyName": s.FriendlyName,
+			"dateCreated":  s.DateCreated.Format("2006-01-02 15:04:05"),
+		})
 	}
 
 	if err := d.Set("chat_services", chatServices); err != nil {
 		return diag.FromErr(err)
 	}
-
-	// FIXME: account sid ?
-	d.SetId(strconv.FormatInt(time.Now().Unix(), 10))
+	d.SetId(client.Client.AccountSid())
 
 	return diags
 }

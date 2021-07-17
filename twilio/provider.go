@@ -2,6 +2,8 @@ package twilio
 
 import (
 	"context"
+	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/twilio/twilio-go"
@@ -17,10 +19,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		return nil, diag.FromErr(fmt.Errorf("Error: %s", "accountSid and authToken is required"))
 	}
 
-	client := twilio.NewRestClientWithParams(twilio.RestClientParams{
-		Username: accountSid,
-		Password: authToken,
-	})
+	client := twilio.NewRestClientWithParams(accountSid, authToken, twilio.RestClientParams{})
 
 	return client, diags
 }
