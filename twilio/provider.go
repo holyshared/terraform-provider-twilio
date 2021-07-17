@@ -10,8 +10,8 @@ import (
 )
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-	accountSid := d.Get("accountSid").(string)
-	authToken := d.Get("authToken").(string)
+	accountSid := d.Get("account_sid").(string)
+	authToken := d.Get("auth_token").(string)
 
 	var diags diag.Diagnostics
 
@@ -27,22 +27,22 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
-			"accountSid": {
+			"account_sid": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("TWILIO_ACCOUNT_SID", nil),
 			},
-			"authToken": {
+			"auth_token": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Sensitive:   true,
 				DefaultFunc: schema.EnvDefaultFunc("TWILIO_AUTH_TOKEN", nil),
 			},
 		},
-		ResourcesMap: map[string]*schema.Resource{},
-		DataSourcesMap: map[string]*schema.Resource{
-			"twilio_chat_services": dataSourceChatServices(),
+		ResourcesMap: map[string]*schema.Resource{
+			"twilio_chat_service": resourceChatService(),
 		},
+		DataSourcesMap:       map[string]*schema.Resource{},
 		ConfigureContextFunc: providerConfigure,
 	}
 }
