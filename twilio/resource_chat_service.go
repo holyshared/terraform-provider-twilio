@@ -31,6 +31,16 @@ func resourceChatService() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"roles": {
+				Type: schema.TypeMap,
+				Elem: &schema.Schema{
+					Type:     schema.TypeString,
+					Optional: true,
+					Computed: false,
+				},
+				Optional: true,
+				Computed: false,
+			},
 		},
 	}
 }
@@ -81,25 +91,82 @@ func resourceChatServiceRead(ctx context.Context, d *schema.ResourceData, m inte
 		return diag.FromErr(err)
 	}
 
+	roles := map[string]interface{}{
+		"default_service_role":         *res.DefaultServiceRoleSid,
+		"default_channel_role":         *res.DefaultChannelRoleSid,
+		"default_channel_creator_role": *res.DefaultChannelCreatorRoleSid,
+	}
+
+	if err := d.Set("roles", roles); err != nil {
+		return diag.FromErr(err)
+	}
+
+	/*
+		// Roles
+		res.DefaultServiceRoleSid
+		res.DefaultChannelRoleSid
+		res.DefaultChannelCreatorRoleSid
+
+		// Service Limits
+		//	res.Limits[]
+		//	"channel_members": 100,
+		//	"user_channels": 250
+
+		// Additional Settings
+		res.ReachabilityEnabled
+		res.ReadStatusEnabled
+		res.ConsumptionReportInterval
+		res.TypingIndicatorTimeout
+		res.PreWebhookRetryCount
+		res.PostWebhookRetryCount
+	*/
+
+	/*
+		res.WebhookFilters
+		res.WebhookMethod
+		res.PreWebhookUrl
+		res.PostWebhookUrl
+	*/
+
 	return diags
 }
 
 func resourceChatServiceUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*tw.RestClient)
 
+	params := &openapi.UpdateServiceParams{}
+
 	if d.HasChange("friendly_name") {
 		friendlyName := d.Get("friendly_name").(string)
+		params.FriendlyName = &friendlyName
+	}
 
-		res, err := client.ChatV2.UpdateService(d.Id(), &openapi.UpdateServiceParams{
-			FriendlyName: &friendlyName,
-		})
-		if err != nil {
-			return diag.FromErr(err)
+	if d.HasChange("roles") {
+		roles := d.Get("roles").(map[string]interface{})
+
+		_, hasServiceRole := roles["default_service_role"]
+		if hasServiceRole {
+			params.DefaultServiceRoleSid = roles["default_service_role"].(*string)
 		}
 
-		if err := d.Set("date_updated", res.DateUpdated.Format(time.RFC3339)); err != nil {
-			return diag.FromErr(err)
+		_, hasChannelRole := roles["default_channel_role"]
+		if hasChannelRole {
+			params.DefaultChannelRoleSid = roles["default_channel_role"].(*string)
 		}
+
+		_, hasChannelCreatorRole := roles["default_channel_creator_role"]
+		if hasChannelCreatorRole {
+			params.DefaultChannelCreatorRoleSid = roles["default_channel_creator_role"].(*string)
+		}
+	}
+
+	res, err := client.ChatV2.UpdateService(d.Id(), params)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("date_updated", res.DateUpdated.Format(time.RFC3339)); err != nil {
+		return diag.FromErr(err)
 	}
 
 	return resourceChatServiceRead(ctx, d, m)
