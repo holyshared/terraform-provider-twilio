@@ -32,14 +32,29 @@ func resourceChatService() *schema.Resource {
 				Computed: true,
 			},
 			"roles": {
-				Type: schema.TypeMap,
-				Elem: &schema.Schema{
-					Type:     schema.TypeString,
-					Optional: true,
-					Computed: false,
+				Type: schema.TypeList,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"default_channel_creator_role": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: false,
+						},
+						"default_channel_role": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: false,
+						},
+						"default_service_role": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: false,
+						},
+					},
 				},
 				Optional: true,
 				Computed: false,
+				MaxItems: 1,
 			},
 			"limits": {
 				Type: schema.TypeList,
@@ -151,11 +166,11 @@ func resourceChatServiceRead(ctx context.Context, d *schema.ResourceData, m inte
 		return diag.FromErr(err)
 	}
 
-	roles := map[string]interface{}{
+	roles := []map[string]interface{}{{
 		"default_service_role":         *res.DefaultServiceRoleSid,
 		"default_channel_role":         *res.DefaultChannelRoleSid,
 		"default_channel_creator_role": *res.DefaultChannelCreatorRoleSid,
-	}
+	}}
 
 	if err := d.Set("roles", roles); err != nil {
 		return diag.FromErr(err)
@@ -197,21 +212,27 @@ func resourceChatServiceUpdate(ctx context.Context, d *schema.ResourceData, m in
 	}
 
 	if d.HasChange("roles") {
-		roles := d.Get("roles").(map[string]interface{})
+		roles := d.Get("roles").([]interface{})
+		if len(roles) > 0 {
+			settings := roles[0].(map[string]interface{})
 
-		_, hasServiceRole := roles["default_service_role"]
-		if hasServiceRole {
-			params.DefaultServiceRoleSid = roles["default_service_role"].(*string)
-		}
+			serviceRole, hasServiceRole := settings["default_service_role"]
+			if hasServiceRole {
+				val := serviceRole.(string)
+				params.DefaultServiceRoleSid = &val
+			}
 
-		_, hasChannelRole := roles["default_channel_role"]
-		if hasChannelRole {
-			params.DefaultChannelRoleSid = roles["default_channel_role"].(*string)
-		}
+			channelRole, hasChannelRole := settings["default_channel_role"]
+			if hasChannelRole {
+				val := channelRole.(string)
+				params.DefaultChannelRoleSid = &val
+			}
 
-		_, hasChannelCreatorRole := roles["default_channel_creator_role"]
-		if hasChannelCreatorRole {
-			params.DefaultChannelCreatorRoleSid = roles["default_channel_creator_role"].(*string)
+			channelCreator, hasChannelCreatorRole := settings["default_channel_creator_role"]
+			if hasChannelCreatorRole {
+				val := channelCreator.(string)
+				params.DefaultChannelCreatorRoleSid = &val
+			}
 		}
 	}
 
