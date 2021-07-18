@@ -41,6 +41,16 @@ func resourceChatService() *schema.Resource {
 				Optional: true,
 				Computed: false,
 			},
+			"limits": {
+				Type: schema.TypeMap,
+				Elem: &schema.Schema{
+					Type:     schema.TypeInt,
+					Optional: true,
+					Computed: false,
+				},
+				Optional: true,
+				Computed: false,
+			},
 		},
 	}
 }
@@ -101,12 +111,11 @@ func resourceChatServiceRead(ctx context.Context, d *schema.ResourceData, m inte
 		return diag.FromErr(err)
 	}
 
-	/*
-		// Roles
-		res.DefaultServiceRoleSid
-		res.DefaultChannelRoleSid
-		res.DefaultChannelCreatorRoleSid
+	if err := d.Set("limits", *res.Limits); err != nil {
+		return diag.FromErr(err)
+	}
 
+	/*
 		// Service Limits
 		//	res.Limits[]
 		//	"channel_members": 100,
@@ -157,6 +166,19 @@ func resourceChatServiceUpdate(ctx context.Context, d *schema.ResourceData, m in
 		_, hasChannelCreatorRole := roles["default_channel_creator_role"]
 		if hasChannelCreatorRole {
 			params.DefaultChannelCreatorRoleSid = roles["default_channel_creator_role"].(*string)
+		}
+	}
+
+	if d.HasChange("limits") {
+		limits := d.Get("limits").(map[string]interface{})
+		_, hasChannelMembers := limits["channel_members"]
+		if hasChannelMembers {
+			params.LimitsChannelMembers = limits["channel_members"].(*int)
+		}
+
+		_, hasUserChannels := limits["user_channels"]
+		if hasUserChannels {
+			params.LimitsUserChannels = limits["user_channels"].(*int)
 		}
 	}
 
