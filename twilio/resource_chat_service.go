@@ -51,6 +51,46 @@ func resourceChatService() *schema.Resource {
 				Optional: true,
 				Computed: false,
 			},
+			"additional_settings": {
+				Type: schema.TypeList,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"reachability_enabled": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Computed: false,
+						},
+						"read_status_enabled": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Computed: false,
+						},
+						"consumption_report_interval": {
+							Type:     schema.TypeInt,
+							Optional: true,
+							Computed: false,
+						},
+						"typing_indicator_timeout": {
+							Type:     schema.TypeInt,
+							Optional: true,
+							Computed: false,
+						},
+						"pre_webhook_retry_count": {
+							Type:     schema.TypeInt,
+							Optional: true,
+							Computed: false,
+						},
+						"post_webhook_retry_count": {
+							Type:     schema.TypeInt,
+							Optional: true,
+							Computed: false,
+						},
+					},
+				},
+				Optional: true,
+				Computed: false,
+				MaxItems: 1,
+			},
 		},
 	}
 }
@@ -115,27 +155,19 @@ func resourceChatServiceRead(ctx context.Context, d *schema.ResourceData, m inte
 		return diag.FromErr(err)
 	}
 
-	/*
-		// Service Limits
-		//	res.Limits[]
-		//	"channel_members": 100,
-		//	"user_channels": 250
+	additionalSettings := map[string]interface{}{
+		"reachability_enabled":        *res.ReachabilityEnabled,
+		"read_status_enabled":         *res.ReadStatusEnabled,
+		"consumption_report_interval": *res.ConsumptionReportInterval,
+		"typing_indicator_timeout":    *res.TypingIndicatorTimeout,
+		"pre_webhook_retry_count":     *res.PreWebhookRetryCount,
+		"post_webhook_retry_count":    *res.PostWebhookRetryCount,
+	}
+	settigns := []map[string]interface{}{additionalSettings}
 
-		// Additional Settings
-		res.ReachabilityEnabled
-		res.ReadStatusEnabled
-		res.ConsumptionReportInterval
-		res.TypingIndicatorTimeout
-		res.PreWebhookRetryCount
-		res.PostWebhookRetryCount
-	*/
-
-	/*
-		res.WebhookFilters
-		res.WebhookMethod
-		res.PreWebhookUrl
-		res.PostWebhookUrl
-	*/
+	if err := d.Set("additional_settings", settigns); err != nil {
+		return diag.FromErr(err)
+	}
 
 	return diags
 }
@@ -179,6 +211,50 @@ func resourceChatServiceUpdate(ctx context.Context, d *schema.ResourceData, m in
 		_, hasUserChannels := limits["user_channels"]
 		if hasUserChannels {
 			params.LimitsUserChannels = limits["user_channels"].(*int)
+		}
+	}
+
+	if d.HasChange("additional_settings") {
+		additionalSettings := d.Get("additional_settings").([]interface{})
+
+		if len(additionalSettings) > 0 {
+			settings := additionalSettings[0].(map[string]interface{})
+
+			reachabilityEnabled, hasReachabilityEnabled := settings["reachability_enabled"]
+			if hasReachabilityEnabled {
+				val := reachabilityEnabled.(bool)
+				params.ReachabilityEnabled = &val
+			}
+
+			readStatusEnabled, hasReadStatusEnabled := settings["read_status_enabled"]
+			if hasReadStatusEnabled {
+				val := readStatusEnabled.(bool)
+				params.ReadStatusEnabled = &val
+			}
+
+			consumptionReportInterval, hasConsumptionReportInterval := settings["consumption_report_interval"]
+			if hasConsumptionReportInterval {
+				val := consumptionReportInterval.(int)
+				params.ConsumptionReportInterval = &val
+			}
+
+			typingIndicatorTimeout, hasTypingIndicatorTimeout := settings["typing_indicator_timeout"]
+			if hasTypingIndicatorTimeout {
+				val := typingIndicatorTimeout.(int)
+				params.TypingIndicatorTimeout = &val
+			}
+
+			preWebhookRetryCount, hasPreWebhookRetryCount := settings["pre_webhook_retry_count"]
+			if hasPreWebhookRetryCount {
+				val := preWebhookRetryCount.(int)
+				params.PreWebhookRetryCount = &val
+			}
+
+			postWebhookRetryCount, hasPostWebhookRetryCount := settings["post_webhook_retry_count"]
+			if hasPostWebhookRetryCount {
+				val := postWebhookRetryCount.(int)
+				params.PostWebhookRetryCount = &val
+			}
 		}
 	}
 
