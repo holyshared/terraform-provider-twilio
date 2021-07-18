@@ -42,14 +42,24 @@ func resourceChatService() *schema.Resource {
 				Computed: false,
 			},
 			"limits": {
-				Type: schema.TypeMap,
-				Elem: &schema.Schema{
-					Type:     schema.TypeInt,
-					Optional: true,
-					Computed: false,
+				Type: schema.TypeList,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"channel_members": {
+							Type:     schema.TypeInt,
+							Optional: true,
+							Computed: false,
+						},
+						"user_channels": {
+							Type:     schema.TypeInt,
+							Optional: true,
+							Computed: false,
+						},
+					},
 				},
 				Optional: true,
 				Computed: false,
+				MaxItems: 1,
 			},
 			"additional_settings": {
 				Type: schema.TypeList,
@@ -151,19 +161,23 @@ func resourceChatServiceRead(ctx context.Context, d *schema.ResourceData, m inte
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set("limits", *res.Limits); err != nil {
+	limits := []map[string]interface{}{{
+		"channel_members": (*res.Limits)["channel_members"],
+		"user_channels":   (*res.Limits)["user_channels"],
+	}}
+
+	if err := d.Set("limits", limits); err != nil {
 		return diag.FromErr(err)
 	}
 
-	additionalSettings := map[string]interface{}{
+	settigns := []map[string]interface{}{{
 		"reachability_enabled":        *res.ReachabilityEnabled,
 		"read_status_enabled":         *res.ReadStatusEnabled,
 		"consumption_report_interval": *res.ConsumptionReportInterval,
 		"typing_indicator_timeout":    *res.TypingIndicatorTimeout,
 		"pre_webhook_retry_count":     *res.PreWebhookRetryCount,
 		"post_webhook_retry_count":    *res.PostWebhookRetryCount,
-	}
-	settigns := []map[string]interface{}{additionalSettings}
+	}}
 
 	if err := d.Set("additional_settings", settigns); err != nil {
 		return diag.FromErr(err)
@@ -202,15 +216,21 @@ func resourceChatServiceUpdate(ctx context.Context, d *schema.ResourceData, m in
 	}
 
 	if d.HasChange("limits") {
-		limits := d.Get("limits").(map[string]interface{})
-		_, hasChannelMembers := limits["channel_members"]
-		if hasChannelMembers {
-			params.LimitsChannelMembers = limits["channel_members"].(*int)
-		}
+		limits := d.Get("limits").([]interface{})
+		if len(limits) > 0 {
+			settings := limits[0].(map[string]interface{})
 
-		_, hasUserChannels := limits["user_channels"]
-		if hasUserChannels {
-			params.LimitsUserChannels = limits["user_channels"].(*int)
+			channelMembers, hasChannelMembers := settings["channel_members"]
+			if hasChannelMembers {
+				val := channelMembers.(int)
+				params.LimitsChannelMembers = &val
+			}
+
+			userChannels, hasUserChannels := settings["user_channels"]
+			if hasUserChannels {
+				val := userChannels.(int)
+				params.LimitsUserChannels = &val
+			}
 		}
 	}
 
