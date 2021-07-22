@@ -2,6 +2,7 @@ package twilio
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	tw "github.com/twilio/twilio-go"
@@ -9,7 +10,34 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
+
+var webHookEvents = []string{
+	"onMessageSend",
+	"onMessageUpdate",
+	"onMessageRemove",
+	"onMediaMessageSend",
+	"onChannelAdd",
+	"onChannelUpdate",
+	"onChannelDestroy",
+	"onMemberAdd",
+	"onMemberUpdate",
+	"onMemberRemove",
+	"onUserUpdate",
+	"onMessageSent",
+	"onMessageUpdated",
+	"onMessageRemoved",
+	"onMediaMessageSent",
+	"onChannelAdded",
+	"onChannelUpdated",
+	"onChannelDestroyed",
+	"onMemberAdded",
+	"onMemberUpdated",
+	"onMemberRemoved",
+	"onUserAdded",
+	"onUserUpdated",
+}
 
 func resourceChatService() *schema.Resource {
 	return &schema.Resource{
@@ -116,6 +144,74 @@ func resourceChatService() *schema.Resource {
 				Computed: false,
 				MaxItems: 1,
 			},
+			"webhooks": {
+				Type: schema.TypeList,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"events": {
+							Type: schema.TypeList,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+							Optional: true,
+							Computed: false,
+							ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
+								warns, errs = validation.ListOfUniqueStrings(val, key)
+
+								v, ok := val.([]interface{})
+								if !ok { // type error
+									errs = append(errs, fmt.Errorf("expected type of %q to be List", key))
+									return warns, errs
+								}
+
+								for _, e := range v {
+									if _, eok := e.(string); !eok {
+										errs = append(errs, fmt.Errorf("expected %q to only contain string elements, found :%v", key, e))
+										return warns, errs
+									}
+								}
+
+								for _, sv := range v {
+									find := false
+									for _, tv := range webHookEvents {
+										if sv.(string) == tv {
+											find = true
+											break
+										}
+										if !find {
+											errs = append(errs, fmt.Errorf("expected %q to event names, found %v", key, sv))
+											return warns, errs
+										}
+									}
+								}
+
+								return warns, errs
+							},
+						},
+						"method": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							Computed:     false,
+							ValidateFunc: validation.StringInSlice([]string{"GET", "POST"}, false),
+						},
+						"pre_hook_url": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							Computed:     false,
+							ValidateFunc: validation.IsURLWithHTTPorHTTPS,
+						},
+						"post_hook_url": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							Computed:     false,
+							ValidateFunc: validation.IsURLWithHTTPorHTTPS,
+						},
+					},
+				},
+				Optional: true,
+				Computed: false,
+				MaxItems: 1,
+			},
 		},
 	}
 }
@@ -195,6 +291,25 @@ func resourceChatServiceRead(ctx context.Context, d *schema.ResourceData, m inte
 	}}
 
 	if err := d.Set("additional_settings", settigns); err != nil {
+		return diag.FromErr(err)
+	}
+
+	webhook := map[string]interface{}{}
+	if res.WebhookFilters != nil {
+		webhook["events"] = *res.WebhookFilters
+	}
+	if res.WebhookMethod != nil {
+		webhook["method"] = *res.WebhookMethod
+	}
+	if res.PreWebhookUrl != nil {
+		webhook["pre_hook_url"] = *res.PreWebhookUrl
+	}
+	if res.PostWebhookUrl != nil {
+		webhook["post_hook_url"] = *res.PostWebhookUrl
+	}
+
+	webhooks := []map[string]interface{}{webhook}
+	if err := d.Set("webhooks", webhooks); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -295,6 +410,42 @@ func resourceChatServiceUpdate(ctx context.Context, d *schema.ResourceData, m in
 			if hasPostWebhookRetryCount {
 				val := postWebhookRetryCount.(int)
 				params.PostWebhookRetryCount = &val
+			}
+		}
+	}
+
+	if d.HasChange("webhooks") {
+		webhooks := d.Get("webhooks").([]interface{})
+
+		if len(webhooks) > 0 {
+			settings := webhooks[0].(map[string]interface{})
+
+			events, hasEvents := settings["events"]
+			if hasEvents {
+				val := events.([]interface{})
+				watchEvents := []string{}
+				for _, e := range val {
+					watchEvents = append(watchEvents, e.(string))
+				}
+				params.WebhookFilters = &watchEvents
+			}
+
+			method, hasMethod := settings["method"]
+			if hasMethod {
+				val := method.(string)
+				params.WebhookMethod = &val
+			}
+
+			preHookURL, hasPreHookURL := settings["pre_hook_url"]
+			if hasPreHookURL {
+				val := preHookURL.(string)
+				params.PreWebhookUrl = &val
+			}
+
+			postHookURL, hasPostHookURL := settings["post_hook_url"]
+			if hasPostHookURL {
+				val := postHookURL.(string)
+				params.PostWebhookUrl = &val
 			}
 		}
 	}
