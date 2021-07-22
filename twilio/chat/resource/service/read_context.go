@@ -10,6 +10,42 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+var pushNotificationTemplateNames = []string{"new_message", "invited_to_channel", "added_to_channel", "removed_from_channel"}
+
+func templateFromResponse(template map[string]interface{}) map[string]interface{} {
+	setting := map[string]interface{}{}
+	if v, ok := template["enabled"].(bool); ok {
+		setting["enabled"] = v
+	}
+	if v, ok := template["template"].(string); ok {
+		setting["template"] = v
+	}
+	if v, ok := template["sound"].(string); ok {
+		setting["sound"] = v
+	}
+	if v, ok := template["badge_count_enabled"].(bool); ok {
+		setting["badge_count_enabled"] = v
+	}
+	return setting
+}
+
+func notificationsFromResponse(noti map[string]interface{}) map[string]interface{} {
+	setting := map[string]interface{}{}
+
+	if v, ok := noti["log_enabled"].(bool); ok {
+		setting["log_enabled"] = v
+	}
+
+	for _, k := range pushNotificationTemplateNames {
+		if v, ok := noti[k].(map[string]interface{}); ok {
+			setting[k] = []map[string]interface{}{
+				templateFromResponse(v),
+			}
+		}
+	}
+	return setting
+}
+
 func ReadContext(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*tw.RestClient)
 
@@ -81,6 +117,13 @@ func ReadContext(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 
 	webhooks := []map[string]interface{}{webhook}
 	if err := d.Set("webhooks", webhooks); err != nil {
+		return diag.FromErr(err)
+	}
+
+	notifications := []map[string]interface{}{
+		notificationsFromResponse(*res.Notifications),
+	}
+	if err := d.Set("notifications", notifications); err != nil {
 		return diag.FromErr(err)
 	}
 

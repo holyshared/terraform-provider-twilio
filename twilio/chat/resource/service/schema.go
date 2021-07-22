@@ -177,6 +177,95 @@ var webhooks = schema.Schema{
 	MaxItems: 1,
 }
 
+var notificationTemplate = schema.Resource{
+	Schema: map[string]*schema.Schema{
+		"enabled": {
+			Type:     schema.TypeBool,
+			Computed: false,
+			Optional: true,
+		},
+		"template": {
+			Type:     schema.TypeString,
+			Computed: false,
+			Optional: true,
+		},
+		"sound": {
+			Type:     schema.TypeString,
+			Computed: false,
+			Optional: true,
+		},
+	},
+}
+
+var notificationTemplateWithBadgeCount = schema.Resource{
+	Schema: map[string]*schema.Schema{
+		"enabled": {
+			Type:     schema.TypeBool,
+			Computed: false,
+			Optional: true,
+		},
+		"template": {
+			Type:     schema.TypeString,
+			Computed: false,
+			Optional: true,
+		},
+		"sound": {
+			Type:     schema.TypeString,
+			Computed: false,
+			Optional: true,
+		},
+		"badge_count_enabled": {
+			Type:     schema.TypeBool,
+			Computed: false,
+			Optional: true,
+		},
+	},
+}
+
+var notifications = schema.Schema{
+	Type: schema.TypeList,
+	Elem: &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"log_enabled": {
+				Type:     schema.TypeBool,
+				Computed: false,
+				Optional: true,
+			},
+			"new_message": {
+				Type:     schema.TypeList,
+				Elem:     &notificationTemplateWithBadgeCount,
+				Computed: false,
+				Optional: true,
+				MaxItems: 1,
+			},
+			"invited_to_channel": {
+				Type:     schema.TypeList,
+				Elem:     &notificationTemplate,
+				Computed: false,
+				Optional: true,
+				MaxItems: 1,
+			},
+			"added_to_channel": {
+				Type:     schema.TypeList,
+				Elem:     &notificationTemplate,
+				Computed: false,
+				Optional: true,
+				MaxItems: 1,
+			},
+			"removed_from_channel": {
+				Type:     schema.TypeList,
+				Elem:     &notificationTemplate,
+				Computed: false,
+				Optional: true,
+				MaxItems: 1,
+			},
+		},
+	},
+	Optional: true,
+	Computed: false,
+	MaxItems: 1,
+}
+
 var Schema = map[string]*schema.Schema{
 	"friendly_name": {
 		Type:     schema.TypeString,
@@ -195,4 +284,5 @@ var Schema = map[string]*schema.Schema{
 	"limits":              &limits,
 	"additional_settings": &additionalSettings,
 	"webhooks":            &webhooks,
+	"notifications":       &notifications,
 }

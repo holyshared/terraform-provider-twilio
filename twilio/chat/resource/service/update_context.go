@@ -11,37 +11,92 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+func applyNotificationsToParams(params *openapi.UpdateServiceParams, settings map[string]interface{}) *openapi.UpdateServiceParams {
+	if logEnabled, ok := settings["log_enabled"].(bool); ok {
+		params.NotificationsLogEnabled = &logEnabled
+	}
+
+	if templates, ok := settings["new_message"].([]interface{}); ok {
+		settings := templates[0].(map[string]interface{})
+		if v, ok := settings["enabled"].(bool); ok {
+			params.SetNotificationsNewMessageEnabled(v)
+		}
+		if v, ok := settings["template"].(string); ok {
+			params.SetNotificationsNewMessageTemplate(v)
+		}
+		if v, ok := settings["sound"].(string); ok {
+			params.SetNotificationsNewMessageSound(v)
+		}
+		if v, ok := settings["badge_count_enabled"].(bool); ok {
+			params.SetNotificationsNewMessageBadgeCountEnabled(v)
+		}
+	}
+
+	if templates, ok := settings["invited_to_channel"].([]interface{}); ok {
+		settings := templates[0].(map[string]interface{})
+		if v, ok := settings["enabled"].(bool); ok {
+			params.SetNotificationsInvitedToChannelEnabled(v)
+		}
+		if v, ok := settings["template"].(string); ok {
+			params.SetNotificationsInvitedToChannelTemplate(v)
+		}
+		if v, ok := settings["sound"].(string); ok {
+			params.SetNotificationsInvitedToChannelSound(v)
+		}
+	}
+
+	if templates, ok := settings["added_to_channel"].([]interface{}); ok {
+		settings := templates[0].(map[string]interface{})
+		if v, ok := settings["enabled"].(bool); ok {
+			params.SetNotificationsAddedToChannelEnabled(v)
+		}
+		if v, ok := settings["template"].(string); ok {
+			params.SetNotificationsAddedToChannelTemplate(v)
+		}
+		if v, ok := settings["sound"].(string); ok {
+			params.SetNotificationsAddedToChannelSound(v)
+		}
+	}
+
+	if templates, ok := settings["removed_from_channel"].([]interface{}); ok {
+		settings := templates[0].(map[string]interface{})
+		if v, ok := settings["enabled"].(bool); ok {
+			params.SetNotificationsRemovedFromChannelEnabled(v)
+		}
+		if v, ok := settings["template"].(string); ok {
+			params.SetNotificationsRemovedFromChannelTemplate(v)
+		}
+		if v, ok := settings["sound"].(string); ok {
+			params.SetNotificationsRemovedFromChannelSound(v)
+		}
+	}
+
+	return params
+}
+
 func UpdateContext(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*tw.RestClient)
 
 	params := &openapi.UpdateServiceParams{}
 
 	if d.HasChange("friendly_name") {
-		friendlyName := d.Get("friendly_name").(string)
-		params.FriendlyName = &friendlyName
+		if friendlyName, ok := d.Get("friendly_name").(string); ok {
+			params.SetFriendlyName(friendlyName)
+		}
 	}
 
 	if d.HasChange("roles") {
 		roles := d.Get("roles").([]interface{})
 		if len(roles) > 0 {
 			settings := roles[0].(map[string]interface{})
-
-			serviceRole, hasServiceRole := settings["default_service_role"]
-			if hasServiceRole {
-				val := serviceRole.(string)
-				params.DefaultServiceRoleSid = &val
+			if v, ok := settings["default_service_role"].(string); ok {
+				params.SetDefaultServiceRoleSid(v)
 			}
-
-			channelRole, hasChannelRole := settings["default_channel_role"]
-			if hasChannelRole {
-				val := channelRole.(string)
-				params.DefaultChannelRoleSid = &val
+			if v, ok := settings["default_channel_role"].(string); ok {
+				params.SetDefaultChannelRoleSid(v)
 			}
-
-			channelCreator, hasChannelCreatorRole := settings["default_channel_creator_role"]
-			if hasChannelCreatorRole {
-				val := channelCreator.(string)
-				params.DefaultChannelCreatorRoleSid = &val
+			if v, ok := settings["default_channel_creator_role"].(string); ok {
+				params.SetDefaultChannelCreatorRoleSid(v)
 			}
 		}
 	}
@@ -50,17 +105,11 @@ func UpdateContext(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		limits := d.Get("limits").([]interface{})
 		if len(limits) > 0 {
 			settings := limits[0].(map[string]interface{})
-
-			channelMembers, hasChannelMembers := settings["channel_members"]
-			if hasChannelMembers {
-				val := channelMembers.(int)
-				params.LimitsChannelMembers = &val
+			if v, ok := settings["channel_members"].(int); ok {
+				params.SetLimitsChannelMembers(v)
 			}
-
-			userChannels, hasUserChannels := settings["user_channels"]
-			if hasUserChannels {
-				val := userChannels.(int)
-				params.LimitsUserChannels = &val
+			if v, ok := settings["user_channels"].(int); ok {
+				params.SetLimitsUserChannels(v)
 			}
 		}
 	}
@@ -70,41 +119,23 @@ func UpdateContext(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 		if len(additionalSettings) > 0 {
 			settings := additionalSettings[0].(map[string]interface{})
-
-			reachabilityEnabled, hasReachabilityEnabled := settings["reachability_enabled"]
-			if hasReachabilityEnabled {
-				val := reachabilityEnabled.(bool)
-				params.ReachabilityEnabled = &val
+			if v, ok := settings["reachability_enabled"].(bool); ok {
+				params.SetReachabilityEnabled(v)
 			}
-
-			readStatusEnabled, hasReadStatusEnabled := settings["read_status_enabled"]
-			if hasReadStatusEnabled {
-				val := readStatusEnabled.(bool)
-				params.ReadStatusEnabled = &val
+			if v, ok := settings["read_status_enabled"].(bool); ok {
+				params.SetReadStatusEnabled(v)
 			}
-
-			consumptionReportInterval, hasConsumptionReportInterval := settings["consumption_report_interval"]
-			if hasConsumptionReportInterval {
-				val := consumptionReportInterval.(int)
-				params.ConsumptionReportInterval = &val
+			if v, ok := settings["consumption_report_interval"].(int); ok {
+				params.SetConsumptionReportInterval(v)
 			}
-
-			typingIndicatorTimeout, hasTypingIndicatorTimeout := settings["typing_indicator_timeout"]
-			if hasTypingIndicatorTimeout {
-				val := typingIndicatorTimeout.(int)
-				params.TypingIndicatorTimeout = &val
+			if v, ok := settings["typing_indicator_timeout"].(int); ok {
+				params.SetTypingIndicatorTimeout(v)
 			}
-
-			preWebhookRetryCount, hasPreWebhookRetryCount := settings["pre_webhook_retry_count"]
-			if hasPreWebhookRetryCount {
-				val := preWebhookRetryCount.(int)
-				params.PreWebhookRetryCount = &val
+			if v, ok := settings["pre_webhook_retry_count"].(int); ok {
+				params.SetPreWebhookRetryCount(v)
 			}
-
-			postWebhookRetryCount, hasPostWebhookRetryCount := settings["post_webhook_retry_count"]
-			if hasPostWebhookRetryCount {
-				val := postWebhookRetryCount.(int)
-				params.PostWebhookRetryCount = &val
+			if v, ok := settings["post_webhook_retry_count"].(int); ok {
+				params.SetPostWebhookRetryCount(v)
 			}
 		}
 	}
@@ -115,33 +146,30 @@ func UpdateContext(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		if len(webhooks) > 0 {
 			settings := webhooks[0].(map[string]interface{})
 
-			events, hasEvents := settings["events"]
-			if hasEvents {
-				val := events.([]interface{})
+			if v, ok := settings["metheventsod"].([]interface{}); ok {
 				watchEvents := []string{}
-				for _, e := range val {
+				for _, e := range v {
 					watchEvents = append(watchEvents, e.(string))
 				}
-				params.WebhookFilters = &watchEvents
+				params.SetWebhookFilters(watchEvents)
 			}
 
-			method, hasMethod := settings["method"]
-			if hasMethod {
-				val := method.(string)
-				params.WebhookMethod = &val
+			if v, ok := settings["method"].(string); ok {
+				params.SetWebhookMethod(v)
 			}
+			if v, ok := settings["pre_hook_url"].(string); ok {
+				params.SetPreWebhookUrl(v)
+			}
+			if v, ok := settings["post_hook_url"].(string); ok {
+				params.SetPostWebhookUrl(v)
+			}
+		}
+	}
 
-			preHookURL, hasPreHookURL := settings["pre_hook_url"]
-			if hasPreHookURL {
-				val := preHookURL.(string)
-				params.PreWebhookUrl = &val
-			}
-
-			postHookURL, hasPostHookURL := settings["post_hook_url"]
-			if hasPostHookURL {
-				val := postHookURL.(string)
-				params.PostWebhookUrl = &val
-			}
+	if d.HasChange("notifications") {
+		if notifications, ok := d.Get("notifications").([]interface{}); ok && len(notifications) > 0 {
+			settings := notifications[0].(map[string]interface{})
+			params = applyNotificationsToParams(params, settings)
 		}
 	}
 
