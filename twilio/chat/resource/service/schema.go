@@ -3,11 +3,9 @@ package service
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-
-	tv "terraform-provider-twilio/twilio/validation"
 )
 
-var supportWebHookEvents = tv.ListOfMatchString([]string{
+var supportWebHookEvents = []string{
 	"onMessageSend",
 	"onMessageUpdate",
 	"onMessageRemove",
@@ -31,7 +29,7 @@ var supportWebHookEvents = tv.ListOfMatchString([]string{
 	"onMemberRemoved",
 	"onUserAdded",
 	"onUserUpdated",
-})
+}
 
 var roles = schema.Schema{
 	Type: schema.TypeList,
@@ -128,29 +126,11 @@ var webhooks = schema.Schema{
 			"events": {
 				Type: schema.TypeList,
 				Elem: &schema.Schema{
-					Type: schema.TypeString,
+					Type:         schema.TypeString,
+					ValidateFunc: validation.StringInSlice(supportWebHookEvents, false),
 				},
 				Optional: true,
 				Computed: false,
-				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
-					unWarns, unErrs := validation.ListOfUniqueStrings(val, key)
-					for _, w := range unWarns {
-						warns = append(warns, w)
-					}
-					for _, e := range unErrs {
-						errs = append(errs, e)
-					}
-
-					whWarns, whErrs := supportWebHookEvents(val, key)
-					for _, w := range whWarns {
-						warns = append(warns, w)
-					}
-					for _, e := range whErrs {
-						errs = append(errs, e)
-					}
-
-					return warns, errs
-				},
 			},
 			"method": {
 				Type:         schema.TypeString,
