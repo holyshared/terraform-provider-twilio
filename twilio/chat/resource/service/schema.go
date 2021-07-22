@@ -1,13 +1,13 @@
 package service
 
 import (
-	"fmt"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+
+	tv "terraform-provider-twilio/twilio/validation"
 )
 
-var webHookEvents = []string{
+var supportWebHookEvents = tv.ListOfMatchString([]string{
 	"onMessageSend",
 	"onMessageUpdate",
 	"onMessageRemove",
@@ -31,7 +31,7 @@ var webHookEvents = []string{
 	"onMemberRemoved",
 	"onUserAdded",
 	"onUserUpdated",
-}
+})
 
 var Schema = map[string]*schema.Schema{
 	"friendly_name": {
@@ -144,33 +144,20 @@ var Schema = map[string]*schema.Schema{
 					Optional: true,
 					Computed: false,
 					ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
-						warns, errs = validation.ListOfUniqueStrings(val, key)
-
-						v, ok := val.([]interface{})
-						if !ok { // type error
-							errs = append(errs, fmt.Errorf("expected type of %q to be List", key))
-							return warns, errs
+						unWarns, unErrs := validation.ListOfUniqueStrings(val, key)
+						for _, w := range unWarns {
+							warns = append(warns, w)
+						}
+						for _, e := range unErrs {
+							errs = append(errs, e)
 						}
 
-						for _, e := range v {
-							if _, eok := e.(string); !eok {
-								errs = append(errs, fmt.Errorf("expected %q to only contain string elements, found :%v", key, e))
-								return warns, errs
-							}
+						whWarns, whErrs := supportWebHookEvents(val, key)
+						for _, w := range whWarns {
+							warns = append(warns, w)
 						}
-
-						for _, sv := range v {
-							find := false
-							for _, tv := range webHookEvents {
-								if sv.(string) == tv {
-									find = true
-									break
-								}
-								if !find {
-									errs = append(errs, fmt.Errorf("expected %q to event names, found %v", key, sv))
-									return warns, errs
-								}
-							}
+						for _, e := range whErrs {
+							errs = append(errs, e)
 						}
 
 						return warns, errs
