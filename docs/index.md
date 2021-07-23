@@ -1,33 +1,30 @@
-# terraform-provider-twilio
+---
+page_title: "Provider: Twilio"
+subcategory: ""
+description: |-
+  Terraform provider for interacting with Twilio API.
+---
 
-```
-terraform {
-  required_providers {
-    twilio = {
-      version = "0.13"
-      source = "holyshared/twilio"
-    }
-  }
-}
+# Twilio Provider
 
+Twilio Provider can manage Twilio configuration.
+
+Use the navigation to the left to read about the available resources.
+
+## Example Usage
+
+Do not keep your authentication password in HCL for production environments, use Terraform environment variables.
+
+```terraform
 provider "twilio" {
   account_sid = var.account_sid
   auth_token = var.auth_token
 }
-
-resource "twilio_chat_service" "dev" {
-  friendly_name = "my-service"
-  limits {
-    user_channels = 250
-    channel_members = 100
-  }
-  additional_settings {
-    reachability_enabled = true
-    read_status_enabled = true
-    consumption_report_interval = 10
-    typing_indicator_timeout = 5
-    pre_webhook_retry_count = 1
-    post_webhook_retry_count = 1
-  }
-}
 ```
+
+## Schema
+
+### Optional
+
+- **account_sid** (String) Username to authenticate to Twilio API
+- **auth_token** (String) Auth token to authenticate to Twilio API
