@@ -36,10 +36,10 @@ func rolesFromResponse(cs *openapi.ChatV2Service) *map[string]interface{} {
 func limitsFromResponse(limits map[string]interface{}) map[string]interface{} {
 	setting := map[string]interface{}{}
 
-	if v, ok := limits["channel_members"].(int); ok {
+	if v, ok := limits["channel_members"]; ok {
 		setting["channel_members"] = v
 	}
-	if v, ok := limits["user_channels"].(int); ok {
+	if v, ok := limits["user_channels"]; ok {
 		setting["user_channels"] = v
 	}
 
@@ -132,7 +132,7 @@ func notificationsFromResponse(noti map[string]interface{}) map[string]interface
 	return setting
 }
 
-func ReadContext(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func readContext(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*tw.RestClient)
 
 	// Warning or errors can be collected in a slice type

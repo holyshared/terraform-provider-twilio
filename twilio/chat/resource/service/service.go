@@ -65,13 +65,13 @@ var limits = schema.Schema{
 				Type:         schema.TypeInt,
 				Optional:     true,
 				Computed:     false,
-				ValidateFunc: validation.IntBetween(0, 3),
+				ValidateFunc: validation.IntBetween(1, 1000),
 			},
 			"user_channels": {
 				Type:         schema.TypeInt,
 				Optional:     true,
 				Computed:     false,
-				ValidateFunc: validation.IntBetween(0, 3),
+				ValidateFunc: validation.IntBetween(1, 1000),
 			},
 		},
 	},
@@ -250,23 +250,31 @@ var notifications = schema.Schema{
 	MaxItems: 1,
 }
 
-var Schema = map[string]*schema.Schema{
-	"friendly_name": {
-		Type:     schema.TypeString,
-		Computed: false,
-		Required: true,
-	},
-	"date_created": {
-		Type:     schema.TypeString,
-		Computed: true,
-	},
-	"date_updated": {
-		Type:     schema.TypeString,
-		Computed: true,
-	},
-	"roles":               &roles,
-	"limits":              &limits,
-	"additional_settings": &additionalSettings,
-	"webhooks":            &webhooks,
-	"notifications":       &notifications,
+func ResourceCredentialService() *schema.Resource {
+	return &schema.Resource{
+		CreateContext: createContext,
+		ReadContext:   readContext,
+		UpdateContext: updateContext,
+		DeleteContext: deleteContext,
+		Schema: map[string]*schema.Schema{
+			"friendly_name": {
+				Type:     schema.TypeString,
+				Computed: false,
+				Required: true,
+			},
+			"date_created": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"date_updated": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"roles":               &roles,
+			"limits":              &limits,
+			"additional_settings": &additionalSettings,
+			"webhooks":            &webhooks,
+			"notifications":       &notifications,
+		},
+	}
 }

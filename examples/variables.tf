@@ -5,3 +5,7 @@ variable "account_sid" {
 variable "auth_token" {
   type = string
 }
+
+variable "fcm_secret" {
+  type = string
+}

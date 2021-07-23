@@ -41,9 +41,7 @@ func Provider() *schema.Provider {
 				DefaultFunc: schema.EnvDefaultFunc("TWILIO_AUTH_TOKEN", nil),
 			},
 		},
-		ResourcesMap: map[string]*schema.Resource{
-			"twilio_chat_service": chat.ResourceChatService(),
-		},
+		ResourcesMap:         chat.ResourcesMap,
 		DataSourcesMap:       map[string]*schema.Resource{},
 		ConfigureContextFunc: providerConfigure,
 	}

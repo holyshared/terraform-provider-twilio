@@ -74,7 +74,7 @@ func applyNotificationsToParams(params *openapi.UpdateServiceParams, settings ma
 	return params
 }
 
-func UpdateContext(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func updateContext(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*tw.RestClient)
 
 	params := &openapi.UpdateServiceParams{}
@@ -182,5 +182,5 @@ func UpdateContext(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		return diag.FromErr(err)
 	}
 
-	return ReadContext(ctx, d, m)
+	return readContext(ctx, d, m)
 }

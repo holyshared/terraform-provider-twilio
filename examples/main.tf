@@ -66,3 +66,8 @@ resource "twilio_chat_service" "terraform_test" {
     }
   }
 }
+
+resource "twilio_chat_fcm_credential" "terraform_fcm_credential" {
+  friendly_name = "terraform-test-fcm-credential"
+  secret = var.fcm_secret
+}

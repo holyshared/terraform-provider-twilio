@@ -1,4 +1,4 @@
-package service
+package fcm
 
 import (
 	"context"
@@ -10,6 +10,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+var credentialType = "fcm"
+
 func createContext(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	client := m.(*tw.RestClient)
 
@@ -17,9 +19,12 @@ func createContext(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	var diags diag.Diagnostics
 
 	friendlyName := d.Get("friendly_name").(string)
+	secret := d.Get("secret").(string)
 
-	res, err := client.ChatV2.CreateService(&openapi.CreateServiceParams{
+	res, err := client.ChatV2.CreateCredential(&openapi.CreateCredentialParams{
 		FriendlyName: &friendlyName,
+		Type:         &credentialType,
+		Secret:       &secret,
 	})
 
 	if err != nil {

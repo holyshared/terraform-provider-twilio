@@ -1,4 +1,4 @@
-package service
+package fcm
 
 import (
 	"context"
@@ -15,7 +15,7 @@ func deleteContext(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	err := client.ChatV2.DeleteService(d.Id())
+	err := client.ChatV2.DeleteCredential(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
