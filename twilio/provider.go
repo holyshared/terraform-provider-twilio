@@ -7,6 +7,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/twilio/twilio-go"
+
+	chat "terraform-provider-twilio/twilio/chat"
 )
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
@@ -39,9 +41,7 @@ func Provider() *schema.Provider {
 				DefaultFunc: schema.EnvDefaultFunc("TWILIO_AUTH_TOKEN", nil),
 			},
 		},
-		ResourcesMap: map[string]*schema.Resource{
-			"twilio_chat_service": resourceChatService(),
-		},
+		ResourcesMap:         chat.ResourcesMap,
 		DataSourcesMap:       map[string]*schema.Resource{},
 		ConfigureContextFunc: providerConfigure,
 	}
