@@ -26,9 +26,9 @@ func createContext(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		return diag.FromErr(err)
 	}
 
-	d.SetId(*res.Sid)
+	updateContext(ctx, d, m)
 
-	readContext(ctx, d, m)
+	d.SetId(*res.Sid)
 
 	return diags
 }

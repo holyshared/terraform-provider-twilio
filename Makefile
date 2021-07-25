@@ -1,4 +1,4 @@
-version = 0.14
+version = 0.1.5
 
 build:
 	go build -o terraform-provider-twilio
