@@ -155,45 +155,64 @@ func readContext(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 		return diag.FromErr(err)
 	}
 
-	roles := []map[string]interface{}{}
-	if ss := rolesFromResponse(res); ss != nil {
-		roles = append(roles, *ss)
-	}
-	if err := d.Set("roles", roles); err != nil {
-		return diag.FromErr(err)
-	}
-
-	limits := []map[string]interface{}{}
-	if res.Limits != nil {
-		limits = append(limits, limitsFromResponse(*res.Limits))
-	}
-	if err := d.Set("limits", limits); err != nil {
-		return diag.FromErr(err)
+	if changed, ok := d.Get("roles").([]interface{}); ok {
+		if len(changed) > 0 {
+			roles := []map[string]interface{}{}
+			if ss := rolesFromResponse(res); ss != nil {
+				roles = append(roles, *ss)
+			}
+			if err := d.Set("roles", roles); err != nil {
+				return diag.FromErr(err)
+			}
+		}
 	}
 
-	additionalSettings := []map[string]interface{}{}
-	if ss := additionalSettingsFromResponse(res); ss != nil {
-		additionalSettings = append(additionalSettings, *ss)
-	}
-	if err := d.Set("additional_settings", additionalSettings); err != nil {
-		return diag.FromErr(err)
-	}
-
-	webhooks := []map[string]interface{}{}
-	if ss := webhookFromResponse(res); ss != nil {
-		webhooks = append(webhooks, *ss)
-	}
-	if err := d.Set("webhooks", webhooks); err != nil {
-		return diag.FromErr(err)
+	if changed, ok := d.Get("limits").([]interface{}); ok {
+		if len(changed) > 0 {
+			limits := []map[string]interface{}{}
+			if res.Limits != nil {
+				limits = append(limits, limitsFromResponse(*res.Limits))
+			}
+			if err := d.Set("limits", limits); err != nil {
+				return diag.FromErr(err)
+			}
+		}
 	}
 
-	notifications := []map[string]interface{}{}
-	if res.Notifications != nil {
-		notifications = append(notifications, notificationsFromResponse(*res.Notifications))
+	if changed, ok := d.Get("additional_settings").([]interface{}); ok {
+		if len(changed) > 0 {
+			additionalSettings := []map[string]interface{}{}
+			if ss := additionalSettingsFromResponse(res); ss != nil {
+				additionalSettings = append(additionalSettings, *ss)
+			}
+			if err := d.Set("additional_settings", additionalSettings); err != nil {
+				return diag.FromErr(err)
+			}
+		}
 	}
 
-	if err := d.Set("notifications", notifications); err != nil {
-		return diag.FromErr(err)
+	if changed, ok := d.Get("webhooks").([]interface{}); ok {
+		if len(changed) > 0 {
+			webhooks := []map[string]interface{}{}
+			if ss := webhookFromResponse(res); ss != nil {
+				webhooks = append(webhooks, *ss)
+			}
+			if err := d.Set("webhooks", webhooks); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+
+	if changed, ok := d.Get("notifications").([]interface{}); ok {
+		if len(changed) > 0 {
+			notifications := []map[string]interface{}{}
+			if res.Notifications != nil {
+				notifications = append(notifications, notificationsFromResponse(*res.Notifications))
+			}
+			if err := d.Set("notifications", notifications); err != nil {
+				return diag.FromErr(err)
+			}
+		}
 	}
 
 	return diags
